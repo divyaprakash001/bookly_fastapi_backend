@@ -8,9 +8,7 @@ class BookService:
   # for getting all books
   async def get_all_books(self,session:AsyncSession):
     statement = select(Book).order_by(desc(Book.created_at))
-    print(statement)
     result = await session.exec(statement)
-    print(result)
     return result.all()
 
 
@@ -18,7 +16,6 @@ class BookService:
   async def get_a_book(self,book_uid:str,session:AsyncSession):
     statement = select(Book).where(Book.uid == book_uid)
     result = await session.exec(statement)
-    print(result)
     book =  result.first()
     return book if book is not None else None
   
@@ -34,6 +31,7 @@ class BookService:
 # for updating a book
   async def update_a_book(self,book_uid:str,update_data:UpdateABookModel,session:AsyncSession):
     book_to_update = await self.get_a_book(book_uid,session)
+
     if book_to_update is not None:
 
       update_data_dict = update_data.model_dump()  #convert to dict
@@ -54,7 +52,7 @@ class BookService:
   # for deleting a book
 
   async def delete_a_book(self,book_uid:str,session:AsyncSession):
-    book_to_delete = self.get_a_book(book_uid,session)
+    book_to_delete = await self.get_a_book(book_uid,session)
 
     if book_to_delete is not None:
       await session.delete(book_to_delete)

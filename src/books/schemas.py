@@ -1,5 +1,4 @@
-from pydantic import BaseModel, validator
-from typing import Optional
+from pydantic import BaseModel
 import uuid
 from datetime import datetime,date
 
@@ -25,17 +24,12 @@ class CreateABookModel(BaseModel):
   page_count: int
   language: str
 
-  # @validator("published_date")
-  # def parse_date(cls, v):
-  #   # Convert if format is DD-MM-YYYY
-  #   return datetime.strptime(v, "%d-%m-%Y").date()
 
 
 class UpdateABookModel(BaseModel):
   title: str
   author: str
   publisher: str
-  published_date: str
   page_count: int
   language: str
 
