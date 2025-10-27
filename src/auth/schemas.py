@@ -18,3 +18,8 @@ class UserBaseModel(BaseModel):
   is_verified:bool
   created_at:datetime
   updated_at:datetime
+
+
+class UserrLoginModel(BaseModel):
+  email:str = Field(max_length=50)
+  password :str = Field(min_length=6)
