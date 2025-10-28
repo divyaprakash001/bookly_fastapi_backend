@@ -7,6 +7,9 @@ from src.db.main import get_session
 from .utils import create_access_token,decode_token, verify_password
 from datetime import timedelta
 from fastapi.responses import JSONResponse
+from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user
+from datetime import datetime
+from src.db.redis import add_jti_to_blocklist
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -76,3 +79,31 @@ async def login_users(login_data:UserrLoginModel,session:AsyncSession=Depends(ge
     
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid Credentials")
   raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Invalid Email Or Password")
+
+
+@auth_router.get('/refresh_token')
+async def get_new_access_token(token_details:dict=Depends(RefreshTokenBearer())):
+  expiry_timestamp = token_details['exp']
+  if datetime.fromtimestamp(expiry_timestamp) > datetime.now():
+    new_access_token = create_access_token(user_data=token_details['user'])
+    return JSONResponse(content={"access_token": new_access_token})
+
+  raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                      detail="Invalid Token")
+
+
+@auth_router.get('/me')
+async def get_current_user(user = Depends(get_current_user)):
+  return user
+
+@auth_router.get("/logout")
+async def revoke_token(token_details:dict=Depends(AccessTokenBearer())):
+  jti = token_details['jti']
+  print(jti)
+  await add_jti_to_blocklist(jti)
+  return JSONResponse(
+    content={
+      "message":"Logged out successfully"
+    },
+    status_code=status.HTTP_200_OK
+  )
