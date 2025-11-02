@@ -7,6 +7,7 @@ from src.db.models import Book
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .schemas import BookModel, CreateABookModel, UpdateABookModel,BookDetailModel
 from src.auth.dependencies import AccessTokenBearer, RoleChecker
+from src.errors import BookNotFound
 
 book_router = APIRouter()
 book_service = BookService()
@@ -53,8 +54,7 @@ async def get_a_book(book_uid:str,session:AsyncSession=Depends(get_session),
   if book:
     return book
   else:
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                      detail=f"Book with id {book_uid} not found")
+    raise BookNotFound()
 
 
 
@@ -66,8 +66,7 @@ async def update_a_book(book_uid:str,book_update_data:UpdateABookModel,session:A
   updated_book = await book_service.update_a_book(book_uid,book_update_data,session)
 
   if updated_book is None:
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                      detail=f"Book not found with the id {book_uid}")
+    raise BookNotFound()
   else:
     return updated_book
 
@@ -79,8 +78,7 @@ async def delete_a_book(book_uid:str,session:AsyncSession=Depends(get_session),
                         token_details:dict=Depends(access_token_bearer)):
   book_to_delete =  await book_service.delete_a_book(book_uid,session)
   if book_to_delete is None:
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                      detail=f"Book not found with the id {book_uid}")
+    raise BookNotFound()
   else:
     return {}
 
