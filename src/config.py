@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings,SettingsConfigDict
-
+from pydantic import SecretStr
 
 class Settings(BaseSettings):
   DATABASE_URL : str
@@ -9,7 +9,7 @@ class Settings(BaseSettings):
   REDIS_PORT:int = 6379
 
   MAIL_USERNAME: str
-  MAIL_PASSWORD: str
+  MAIL_PASSWORD: SecretStr
   MAIL_FROM: str
   MAIL_PORT: int
   MAIL_SERVER: str

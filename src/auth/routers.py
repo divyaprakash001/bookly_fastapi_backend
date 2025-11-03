@@ -4,20 +4,22 @@ from fastapi.exceptions import HTTPException
 from .service import UserService
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
-from .utils import create_access_token,decode_token, verify_password
+from .utils import create_access_token,decode_token, verify_password, create_url_safe_token, decode_url_safe_token
 from datetime import timedelta
 from fastapi.responses import JSONResponse
 from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
 from datetime import datetime
 from src.db.redis import add_jti_to_blocklist
-from src.errors import UserAlreadyExists, UserNotFound, InvalidCredentials, InvalidToken
+from src.errors import AccountCreationFailed, UserAlreadyExists, UserNotFound, InvalidCredentials, InvalidToken
 from src.mail import mail, create_message
+from src.config import Config
 
 auth_router = APIRouter()
 user_service = UserService()
 role_checker = RoleChecker(["admin","user"])
 
 REFRESH_TOKEN_EXPIRY = 2
+
 
 @auth_router.post('/send_mail')
 async def send_mail(emails:EmailModel):
@@ -42,18 +44,36 @@ async def get_user(user_email:str,session:AsyncSession=Depends(get_session)):
   else:
     raise UserNotFound()
 
-@auth_router.post('/signup',response_model=UserBooksModel,status_code=status.HTTP_201_CREATED)
+@auth_router.post('/signup',status_code=status.HTTP_201_CREATED)
 async def signup_user(user_data:CreateUserModel,session:AsyncSession=Depends(get_session)):
   email = user_data.email
   user_exists = await user_service.user_exists(email,session)
   if user_exists:
     raise UserAlreadyExists()
   new_user = await user_service.create_user(user_data,session)
+
+  token = create_url_safe_token({"email":email})
+  link = f"http://{Config.DOMAIN}/api/v1/auth/verify/{token}"
+  html_message = f"""
+  <h1>Verify your Email</h1>
+  <p>Please click this <a href="{link}">link</a> to verify your email</p>
+"""
+  
+  message = create_message(
+    recipients=[email],
+    subject="Verify your email",
+    body=html_message
+  )
+
+  await mail.send_message(message)
+
   if new_user is not None:
-    return new_user
+    return {
+      "message":"Account Created! Check email to verify your account",
+      "user":new_user
+    }
   else:
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                      detail=f"Something went wrong in creating user")
+    raise AccountCreationFailed()
   
 
 @auth_router.post('/login',status_code=status.HTTP_202_ACCEPTED)

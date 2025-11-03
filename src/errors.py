@@ -60,6 +60,12 @@ class BookNotFound(BooklyException):
     pass
 
 
+class AccountCreationFailed(BooklyException):
+    """Account Creation Failed"""
+
+    pass
+
+
 class TagNotFound(BooklyException):
     """Tag Not found"""
 
@@ -101,6 +107,18 @@ def register_all_errors(app:FastAPI):
             initial_detail={
                 "message":"User with email already exists",
                 "error_code":"user_exists",
+            }
+        )
+    )
+
+    # user already exists
+    app.add_exception_handler(
+        AccountCreationFailed,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            initial_detail={
+                "message":"Account Creation Failed",
+                "error_code":"account_creation_failed",
             }
         )
     )

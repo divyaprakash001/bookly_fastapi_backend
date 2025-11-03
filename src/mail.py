@@ -2,6 +2,7 @@ from fastapi_mail import FastMail, ConnectionConfig, MessageSchema, MessageType
 from src.config import Config
 from pathlib import Path
 from typing import List
+from pydantic import SecretStr
 
 BASE_DIR = Path(__file__).resolve().parent
 
