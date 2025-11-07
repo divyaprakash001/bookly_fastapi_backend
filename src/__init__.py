@@ -32,6 +32,12 @@ app = FastAPI(
   description=description,
   version=version,
   # lifespan=life_span
+  contact={
+    "name":"Divya Prakash",
+    "email":"divyaprakashara09@gmail.com"
+  },
+  # docs_url=f"/api/{version}/docs"
+  # redoc_url=f"/api/{version}/redoc"
 )
 
 register_all_errors(app)
